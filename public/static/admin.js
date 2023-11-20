@@ -1,17 +1,3 @@
-// +----------------------------------------------------------------------
-// | Static Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-static
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-static
-// +----------------------------------------------------------------------
-
 /*! 应用根路径，静态插件库路径，动态插件库路径 */
 let srcs = document.scripts[document.scripts.length - 1].src.split('/');
 window.appRoot = srcs.slice(0, -2).join('/') + '/';
@@ -390,11 +376,17 @@ $(function () {
         };
         /*! 通过 URI 查询最佳菜单 NODE */
         this.queryNode = function (uri, node) {
-            if (!/^m-/.test(node = node || location.href.replace(/.*spm=([\d\-m]+).*/ig, '$1'))) {
-                let $menu = $('[data-menu-node][data-open*="' + uri.replace(/\.html$/ig, '') + '"]');
-                return $menu.size() ? $menu.get(0).dataset.menuNode : '';
+            // 如果该节点存在直接返回 Node 值
+            if (/^m-/.test(node = node || location.href.replace(/.*spm=([\d\-m]+).*/ig, '$1'))) {
+                if ($('[data-menu-node="' + node + '"]').size()) return node;
             }
-            return node;
+            let path = uri.replace(/\.html$/ig, '');
+            // 尝试通过 URI 查询节点值
+            let $menu = $('[data-menu-node][data-open*="' + path + '"]');
+            if ($menu.size()) return $menu.get(0).dataset.menuNode;
+            // 尝试通过 URL 查询节点值
+            $menu = $('[data-menu-node][data-open~="#' + path + '"]');
+            return $menu.size() ? $menu.get(0).dataset.menuNode : (/^m-/.test(node || '') ? node : '');
         };
         /*! 完整 URL 转 URI 地址 */
         this.parseUri = function (uri, elem, vars, temp, attrs) {
@@ -425,6 +417,7 @@ $(function () {
                     layer.close(evt.idx);
                 });
             });
+
             /*! 监听窗口大小及HASH切换 */
             return $(window).on('resize', function () {
                 (layui.data('AdminMenuType')['mini'] || $body.width() < 1000) ? layout.addClass(mclass) : layout.removeClass(mclass);
@@ -647,6 +640,7 @@ $(function () {
 
             // 默认动态设置页数, 动态设置最大高度
             if (option.page === true) option.page = {curr: layui.sessionData('pages')[option.id] || 1};
+            if (option.width === 'full') option.width = $table.parent().width();
             if (option.height === 'full') if ($table.parents('.iframe-pagination').size()) {
                 $table.parents('.iframe-pagination').addClass('not-footer');
                 option.height = $(window).height() - $table.removeClass('layui-hide').offset().top - 20;
@@ -664,9 +658,8 @@ $(function () {
             option.done = function (res, curr, count) {
                 layui.sessionData('pages', {key: table.id, value: this.page.curr || 1});
                 typeof option.success === 'function' && option.success.call(this, res, curr, count);
-                $.form.reInit($table.next()).find('[data-load][data-time!="false"],[data-action][data-time!="false"],[data-queue],[data-iframe]').not('[data-table-id]').attr('data-table-id', table.id);
+                $.form.reInit($table.next()).find('[data-open],[data-load][data-time!="false"],[data-action][data-time!="false"],[data-queue],[data-iframe]').not('[data-table-id]').attr('data-table-id', table.id);
                 (option.loading = this.loading = true) && $table.data('next', this).next().find(cls.join(',')).animate({opacity: 1});
-
             }, option.parseData = function (res) {
                 if (typeof params.filter === 'function') {
                     res.data = params.filter(res.data, res);
@@ -900,7 +893,12 @@ $(function () {
 
     /*! 注册 data-open 事件行为 */
     $.base.onEvent('click', '[data-open]', function () {
+        // 仅记录当前表格分页
+        let page = 0, tbid = this.dataset.tableId || null;
+        if (tbid) page = layui.sessionData('pages')[tbid] || 0;
         layui.sessionData('pages', null);
+        if (page > 0) layui.sessionData('pages', {key: tbid, value: page})
+        // 根据链接类型跳转页面
         if (this.dataset.open.match(/^https?:/)) {
             $.form.goto(this.dataset.open);
         } else {
@@ -920,6 +918,7 @@ $(function () {
     /*! 注册 data-modal 事件行为 */
     $.base.onEvent('click', '[data-modal]', function () {
         $.base.applyRuleValue(this, {open_type: 'modal'}, function (data, elem, dset) {
+            let area = dset.area || [dset.width || '800px', dset.height || '580px'];
             let defer = $.form.modal(dset.modal, data, dset.title || this.innerText || '编辑', undefined, undefined, undefined, dset.area || dset.width || '800px', dset.offset || 'auto', dset.full !== undefined);
             defer.progress((type) => type === 'modal.close' && dset.closeRefresh && $.layTable.reload(dset.closeRefresh));
         });

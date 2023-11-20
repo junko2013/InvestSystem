@@ -1,40 +1,31 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 namespace app\admin\controller;
 
-use think\admin\Controller;
+use app\admin\controller\sd\BaseSdCtrl;
+use ReflectionException;
+use think\admin\Exception;
 use think\admin\model\SystemUser;
 use think\admin\service\AdminService;
 use think\admin\service\MenuService;
-
+use think\db\exception\DataNotFoundException;
+use think\db\exception\DbException;
+use think\db\exception\ModelNotFoundException;
+use think\facade\Lang;
 /**
  * 后台界面入口
  * @class Index
  * @package app\admin\controller
  */
-class Index extends Controller
+class Index extends BaseSdCtrl
 {
     /**
      * 显示后台首页
-     * @throws \ReflectionException
-     * @throws \think\admin\Exception
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws ReflectionException
+     * @throws Exception
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     public function index()
     {
@@ -42,6 +33,8 @@ class Index extends Controller
         AdminService::apply($this->app->isDebug());
         /*! 读取当前用户权限菜单树 */
         $this->menus = MenuService::getTree();
+        /*! 读取多语言列表 */
+        $this->langs = \think\facade\Config::get('lang.allow_lang_list');
         /*! 判断当前用户的登录状态 */
         $this->login = AdminService::isLogin();
         /*! 菜单为空且未登录跳转到登录页 */
@@ -55,11 +48,23 @@ class Index extends Controller
         }
     }
 
+	/**多语言切换
+	 * @param $lang
+	 * @return void
+	 */
+	public function switchLang($lang = 'en-us')
+	{
+		if (in_array($lang, ['zh-cn', 'en-us'])) {
+			Lang::setLangSet($lang);
+		}
+		$this->redirect("/admin/index");
+	}
+
     /**
      * 后台主题切换
      * @login true
      * @return void
-     * @throws \think\admin\Exception
+     * @throws Exception
      */
     public function theme()
     {
@@ -86,7 +91,7 @@ class Index extends Controller
     {
         $this->_applyFormToken();
         if (AdminService::getUserId() === intval($id)) {
-            SystemUser::mForm('user/form', 'id', [], ['id' => $id]);
+            SystemUser::mForm('user/form_info', 'id', [], ['id' => $id]);
         } else {
             $this->error('只能修改自己的资料！');
         }
@@ -117,12 +122,12 @@ class Index extends Controller
     /**
      * 修改当前用户密码
      * @login true
-     * @param mixed $id
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @param mixed|int $id
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
-    public function pass($id = 0)
+    public function pass(int $id = 0): void
     {
         $this->_applyFormToken();
         if (AdminService::getUserId() !== intval($id)) {

@@ -1,42 +1,34 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 namespace app\admin\controller;
 
-use think\admin\Controller;
+use app\admin\controller\sd\BaseSdCtrl;
+use app\model\sd\SdUser;
 use think\admin\helper\QueryHelper;
 use think\admin\model\SystemAuth;
 use think\admin\model\SystemBase;
 use think\admin\model\SystemUser;
 use think\admin\service\AdminService;
+use think\db\exception\DataNotFoundException;
+use think\db\exception\DbException;
+use think\db\exception\ModelNotFoundException;
+use think\db\Query;
+use think\model\Relation;
 
 /**
  * 系统用户管理
  * @class User
  * @package app\admin\controller
  */
-class User extends Controller
+class User extends BaseSdCtrl
 {
     /**
      * 系统用户管理
      * @auth true
      * @menu true
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     public function index()
     {
@@ -50,7 +42,7 @@ class User extends Controller
             $query->where(['is_deleted' => 0, 'status' => intval($this->type === 'index')]);
 
             // 关联用户身份资料
-            /** @var \think\model\Relation|\think\db\Query $query */
+            /** @var Relation|Query $query */
             $query->with(['userinfo' => static function ($query) {
                 $query->field('code,name,content');
             }]);
@@ -109,9 +101,9 @@ class User extends Controller
     /**
      * 表单数据处理
      * @param array $data
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     protected function _form_filter(array &$data)
     {
@@ -129,6 +121,21 @@ class User extends Controller
                 if (SystemUser::mk()->where($map)->count() > 0) {
                     $this->error("账号已经存在，请使用其它账号！");
                 }
+				//检查用户账号是否重复
+	            if ($this->agent_id == 0) {
+		            //$data['parent_id'] = 0;
+	            } else {
+		            $data['parent_id'] = $this->agent_id;
+	            }
+	            if (!isset($data['id']) && $data['parent_id'] > 0) {
+		            if (!$data['contact_phone']) $this->error('手机号必填');
+		            if (SdUser::where(['tel' => $data['contact_phone']])->count('id') > 0) {
+			            $this->error("手机号 {$data['contact_phone']} 已经存在，请使用其它手机号！");
+		            }
+		            if (SdUser::where(['username' => $data['username']])->count('id') > 0) {
+			            $this->error("账号 {$data['username']} 已经存在，请使用其它账号！");
+		            }
+	            }
                 // 新添加的用户密码与账号相同
                 $data['password'] = md5($data['username']);
             }
@@ -140,6 +147,17 @@ class User extends Controller
             // 用户权限管理
             $this->superName = AdminService::getSuperName();
             $this->authorizes = SystemAuth::items();
+
+	        $data['user_id'] = !empty($data['user_id']) ? $data['user_id'] : 0;
+	        $this->agent_list = SystemUser::where('parent_id', 0)
+		        ->where('user_id', 0)
+		        ->where('usertype', "agent")
+		        ->field('id,username')
+		        ->where('is_deleted', 0);
+	        if ($this->agent_id) $this->agent_list->where('id', $this->agent_id);
+	        $this->agent_list = $this->agent_list->select();
+
+	        $this->is_admin = $this->agent_id == 0;
         }
     }
 

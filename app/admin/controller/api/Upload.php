@@ -1,21 +1,8 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 namespace app\admin\controller\api;
 
+use Exception;
 use think\admin\Controller;
 use think\admin\helper\QueryHelper;
 use think\admin\model\SystemFile;
@@ -27,6 +14,10 @@ use think\admin\storage\LocalStorage;
 use think\admin\storage\QiniuStorage;
 use think\admin\storage\TxcosStorage;
 use think\admin\storage\UpyunStorage;
+use think\db\exception\DataNotFoundException;
+use think\db\exception\DbException;
+use think\db\exception\ModelNotFoundException;
+use think\db\Query;
 use think\exception\HttpResponseException;
 use think\file\UploadedFile;
 use think\Response;
@@ -58,9 +49,9 @@ class Upload extends Controller
 
     /**
      * 文件选择器
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     public function image()
     {
@@ -69,7 +60,7 @@ class Upload extends Controller
             $this->title = '文件选择器';
         }, function (QueryHelper $query) use ($unid, $uuid) {
             if ($unid && $uuid) $query->where(function ($query) use ($uuid, $unid) {
-                /** @var \think\db\Query $query */
+                /** @var Query $query */
                 $query->whereOr([['uuid', '=', $uuid], ['unid', '=', $unid]]);
             }); else {
                 $query->where($unid ? ['unid' => $unid] : ['uuid' => $uuid]);
@@ -154,7 +145,7 @@ class Upload extends Controller
             $this->success('获取上传授权参数', array_merge($data, ['id' => $file->id ?? 0]), 404);
         } catch (HttpResponseException $exception) {
             throw $exception;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->error($exception->getMessage());
         }
     }
@@ -243,7 +234,7 @@ class Upload extends Controller
             }
         } catch (HttpResponseException $exception) {
             throw $exception;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             trace_file($exception);
             $this->error($exception->getMessage());
         }
@@ -266,7 +257,7 @@ class Upload extends Controller
     private function getType(): string
     {
         $type = strtolower(input('uptype', ''));
-        if (in_array($type, ['local', 'qiniu', 'alioss', 'txcos', 'uptype'])) {
+        if (in_array($type, ['local','qiniu', 'alioss', 'txcos', 'uptype'])) {
             return $type;
         } else {
             return strtolower(sysconf('storage.type|raw'));
@@ -288,7 +279,7 @@ class Upload extends Controller
             }
         } catch (HttpResponseException $exception) {
             throw $exception;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             trace_file($exception);
             $this->error(lang($exception->getMessage()));
         }

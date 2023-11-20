@@ -1,43 +1,33 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 namespace app\admin\controller;
 
-use think\admin\Controller;
+use app\admin\controller\sd\BaseSdCtrl;
 use think\admin\helper\QueryHelper;
 use think\admin\model\SystemQueue;
 use think\admin\service\AdminService;
 use think\admin\service\ProcessService;
 use think\admin\service\QueueService;
+use think\db\exception\DataNotFoundException;
+use think\db\exception\DbException;
+use think\db\exception\ModelNotFoundException;
 use think\exception\HttpResponseException;
+use think\admin\Controller;
 
 /**
  * 系统任务管理
  * @class Queue
  * @package app\admin\controller
  */
-class Queue extends Controller
+class Queue extends BaseSdCtrl
 {
     /**
      * 系统任务管理
      * @auth true
      * @menu true
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     public function index()
     {
@@ -61,9 +51,9 @@ class Queue extends Controller
      * @param array $data
      * @param array $result
      * @return void
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
      */
     protected function _index_page_filter(array $data, array &$result)
     {

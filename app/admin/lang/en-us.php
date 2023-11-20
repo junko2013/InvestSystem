@@ -1,19 +1,5 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 $extra = [];
 $extra['开发人员或在功能调试时使用，系统异常时会显示详细的错误信息，同时还会记录操作日志及数据库 SQL 语句信息。'] = 'Developers may use it during functional debugging. When there are system exceptions, detailed error messages will be displayed, and operation logs and database SQL statement information will also be recorded.';
 $extra['项目正式部署上线后使用，系统异常时统一显示 “%s”，只记录重要的异常日志信息，强烈推荐上线后使用此模式。'] = 'After the project is officially deployed and launched, it will be used. When there are system exceptions, " %s " will be displayed uniformly, and only important exception log information will be recorded. It is strongly recommended to use this mode after launch.';
@@ -192,4 +178,19 @@ return array_merge($extra, [
     '系统用户'                => 'System User',
     '密 码'                   => 'Password',
     '系统用户管理'            => 'Users',
+	//菜单
+	'系统配置' => 'System Config',
+	'系统参数配置' => 'System Param Config',
+	'系统任务管理' => 'System Job Manage',
+	'系统日志管理' => 'System Log Manage',
+	'数据字典管理' => 'System Dict Manage',
+	'系统文件管理' => 'System File Manage',
+	'系统菜单管理' => 'System Menu Manage',
+	//权限
+	'权限管理'=>'Permission Manage',
+	'系统权限管理'=>'System Permission Manage',
+	'语言切换'=>'Language',
+
+	'批量删除'=>'Batch Delete',
+	'清空数据'=>'Delete All'
 ]);

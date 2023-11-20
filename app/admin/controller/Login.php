@@ -1,28 +1,16 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Admin Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
-// +----------------------------------------------------------------------
-
 namespace app\admin\controller;
 
-use think\admin\Controller;
+use app\admin\service\GoogleService;
+use think\admin\Exception;
 use think\admin\extend\CodeExtend;
 use think\admin\model\SystemUser;
 use think\admin\service\AdminService;
 use think\admin\service\CaptchaService;
 use think\admin\service\RuntimeService;
 use think\admin\service\SystemService;
+use think\admin\Controller;
 
 /**
  * 用户登录管理
@@ -35,7 +23,7 @@ class Login extends Controller
     /**
      * 后台登录入口
      * @return void
-     * @throws \think\admin\Exception
+     * @throws Exception
      */
     public function index()
     {
@@ -93,6 +81,19 @@ class Login extends Controller
                 $this->app->session->set('LoginInputSessionError', true);
                 $this->error('登录账号或密码错误，请重新输入!');
             }
+	        if (config('open_google_safe')) {
+		        //判断是否绑定谷歌令牌
+		        if (GoogleService::instance()->isBind($user['id'])) {
+			        $googleCode = input('google_code');
+			        if (empty($googleCode)) $this->error('请输入谷歌验证码!');
+			        $gcResult = GoogleService::instance()->checkCode($user['id'], $googleCode);
+			        if (!$gcResult) $this->error('谷歌验证码错误!');
+		        } else {
+			        session('admin_info_bind_google_code', $user);
+					$this->error('账号验证成功，请先绑定谷歌令牌，正在跳转...', url('bind'));
+			        return;
+		        }
+	        }
             $user->hidden(['sort', 'status', 'password', 'is_deleted']);
             $this->app->session->set('user', $user->toArray());
             $this->app->session->delete('LoginInputSessionError');
@@ -106,6 +107,36 @@ class Login extends Controller
             $this->success('登录成功', sysuri('admin/index/index'));
         }
     }
+
+	/**
+	 * 绑定谷歌令牌
+	 * */
+	public function bind(): void
+	{
+		$bindAdmin = session('admin_info_bind_google_code');
+		if ($this->request->isPost()) {
+			$this->_applyFormToken();//验证令牌
+			if (!$bindAdmin) $this->error('请重新登录', url('index'));
+			$code = $this->request->post('google_code');
+			if (!$code) $this->error('请输入谷歌验证码');
+			if (!GoogleService::instance()->checkCode($bindAdmin['id'], $code)) {
+				$this->error('令牌验证失败');
+			}
+			GoogleService::instance()->setBind($bindAdmin['id']);
+			sysoplog('绑定谷歌令牌', "SYSTEM USER " . $bindAdmin['username']);
+			$this->success('绑定成功，请重新登录', url('index'));
+		}
+		if (!$bindAdmin) {
+			$this->redirect('index');
+		}
+		$bindInfo = GoogleService::instance()->getBindUrl($bindAdmin['id']);
+		if (!$bindInfo) {
+			$this->error('绑定失败，请联系技术');
+		}
+		$this->googleQrCode = $bindInfo['google_url'];
+		$this->adminInfo = $bindAdmin;
+		$this->fetch();
+	}
 
     /**
      * 生成验证码

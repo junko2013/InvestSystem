@@ -28,7 +28,28 @@
                     </label>
                 </div>
             </div>
+        </fieldset>
 
+        <fieldset class="layui-bg-gray">
+            <legend><b class="layui-badge think-bg-violet">所属代理</b></legend>
+            <div class="layui-row layui-col-space15">
+                <div class="layui-form-item">
+                    <label class="relative block">
+                        <span class="color-green font-w7">所属代理</span>
+                        <span class="color-desc margin-left-5">Agent</span>
+                        <select name="parent_id" class="layui-select" id="selectList">
+                            {if $is_admin}<option value="0">平台</option>{/if}
+                            {foreach $agent_list as $v}
+                            {if isset($vo) and isset($vo.parent_id)}
+                            <option value="{$v.id}" {if $v.id==$vo.parent_id} selected{/if} >{$v.username}</option>
+                            {else}
+                            <option value="{$v.id}">{$v.username}</option>
+                            {/if}
+                            {/foreach}
+                        </select>
+                    </label>
+                </div>
+            </div>
         </fieldset>
 
         {if !empty($bases) || !empty($authorizes)}

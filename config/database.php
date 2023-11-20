@@ -1,22 +1,8 @@
 <?php
 
-// +----------------------------------------------------------------------
-// | Static Plugin for ThinkAdmin
-// +----------------------------------------------------------------------
-// | 版权所有 2014~2023 Anyon <zoujingli@qq.com>
-// +----------------------------------------------------------------------
-// | 官方网站: https://thinkadmin.top
-// +----------------------------------------------------------------------
-// | 开源协议 ( https://mit-license.org )
-// | 免责声明 ( https://thinkadmin.top/disclaimer )
-// +----------------------------------------------------------------------
-// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-static
-// | github 代码仓库：https://github.com/zoujingli/think-plugs-static
-// +----------------------------------------------------------------------
-
 return [
     // 默认使用的数据库连接配置
-    'default'         => 'sqlite',
+    'default'         => 'mysql',
     // 自定义时间查询规则
     'time_query_rule' => [],
     // 自动写入时间戳字段
@@ -31,11 +17,11 @@ return [
             // 服务器地址
             'hostname'        => '127.0.0.1',
             // 数据库名
-            'database'        => 'admin_v6',
+            'database'        => 'sd',
             // 用户名
-            'username'        => 'admin_v6',
+            'username'        => 'root',
             // 密码
-            'password'        => 'FbYBHcWKr2',
+            'password'        => 'junko2013',
             // 端口
             'hostport'        => '3306',
             // 数据库连接参数
