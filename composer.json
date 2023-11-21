@@ -8,7 +8,8 @@
     "zoujingli/ip2region": "^2.0",
     "zoujingli/think-library": "^6.1",
     "zoujingli/think-plugs-admin": "^1.0",
-    "zoujingli/think-plugs-center": "^1.0"
+    "zoujingli/think-plugs-center": "^1.0",
+    "ext-pdo": "*"
   },
   "autoload": {
     "psr-0": {

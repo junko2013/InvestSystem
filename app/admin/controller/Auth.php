@@ -1,5 +1,19 @@
 <?php
 
+// +----------------------------------------------------------------------
+// | Admin Plugin for ThinkAdmin
+// +----------------------------------------------------------------------
+// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
+// +----------------------------------------------------------------------
+// | 官方网站: https://thinkadmin.top
+// +----------------------------------------------------------------------
+// | 开源协议 ( https://mit-license.org )
+// | 免责声明 ( https://thinkadmin.top/disclaimer )
+// +----------------------------------------------------------------------
+// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
+// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
+// +----------------------------------------------------------------------
+
 namespace app\admin\controller;
 
 use think\admin\Controller;
@@ -8,9 +22,6 @@ use think\admin\model\SystemAuth;
 use think\admin\model\SystemNode;
 use think\admin\Plugin;
 use think\admin\service\AdminService;
-use think\db\exception\DataNotFoundException;
-use think\db\exception\DbException;
-use think\db\exception\ModelNotFoundException;
 
 /**
  * 系统权限管理
@@ -23,9 +34,9 @@ class Auth extends Controller
      * 系统权限管理
      * @auth true
      * @menu true
-     * @throws DataNotFoundException
-     * @throws DbException
-     * @throws ModelNotFoundException
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
      */
     public function index()
     {

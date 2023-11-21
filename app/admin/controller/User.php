@@ -4,6 +4,7 @@ namespace app\admin\controller;
 
 use app\admin\controller\sd\BaseSdCtrl;
 use app\model\sd\SdUser;
+use think\admin\extend\DataExtend;
 use think\admin\helper\QueryHelper;
 use think\admin\model\SystemAuth;
 use think\admin\model\SystemBase;
@@ -52,6 +53,16 @@ class User extends BaseSdCtrl
             $query->like('username|nickname#username,contact_phone#phone,contact_mail#mail');
         });
     }
+
+	public function _index_page_filter(&$data): void
+	{
+		foreach ($data as &$vo) {
+			$vo['invite_code'] = '';
+			if($vo['user_id']>0){
+				$vo['invite_code'] = SdUser::where('id',$vo['user_id'])->value('invite_code');
+			}
+		}
+	}
 
     /**
      * 添加系统用户

@@ -190,7 +190,7 @@ class SdUser extends Model
      * @return array
      * @throws PDOException|Exception
      */
-    public function add_users($tel, $user_name, $pwd, $parent_id, $token = '', $pwd2 = '', $agent_id = 0, $ip = '')
+    public function add_user($tel, $user_name, $pwd, $parent_id, $token = '', $pwd2 = '', $agent_id = 0, $ip = '')
     {
         $tmp = self::where(['tel' => $tel])->count();
         if ($tmp) {
@@ -349,83 +349,7 @@ class SdUser extends Model
         return [$uids, $lv];
     }
 
-    /**
-     * 编辑用户
-     *
-     * @param int $id
-     * @param string $tel
-     * @param string $user_name
-     * @param string $pwd
-     * @param int $parent_id
-     * @param $balance
-     * @param $freeze_balance
-     * @param string $token
-     * @param string $pwd2
-     * @param int $agent_id
-     * @return array
-     * @throws PDOException|Exception
-     */
-    public function edit_users($id, $tel, $user_name, $remark, $pwd, $parent_id, $balance, $freeze_balance, $token, $pwd2 = '',$agent_id)
-    {
-        $tmp = self::where(['tel' => $tel])->where('id', '<>', $id)->count();
-        if ($tmp) {
-            return ['code' => 1, 'info' => lang('sjhmyzc')];
-        }
-        $data = [
-            'tel' => $tel,
-            'freeze_balance' => $freeze_balance,
-            'username' => $user_name,
-            'remark' => $remark,
-            'parent_id' => $parent_id,
-            '__token__' => $token,
-        ];
-        //当前是代理修改，且允许代理修改用户余额
-        if($agent_id&&config("allow_agent_modify_balance")){
-            $data['balance'] = $balance;
-        }
-        //管理员允许修改用户余额
-        if(!$agent_id){
-            $data['balance'] = $balance;
-        }
-
-        if ($pwd) {
-            //不提交密码则不改密码
-            $data['pwd'] = $pwd;
-        } else {
-            $this->rule['pwd'] = '';
-        }
-        if ($parent_id) {
-            $parent_id = self::where('id', $parent_id)->value('id');
-            if (!$parent_id) {
-                return ['code' => 1, 'info' => lang('sjidbcz')];
-            }
-            $data['parent_id'] = $parent_id;
-        }
-
-        $validate = Validate::make($this,$this->rule, $this->info);//验证表单
-        if (!$validate->check($data)) return ['code' => 1, 'info' => $validate->getError()];
-
-        if ($pwd) {
-            $salt = rand(0, 99999); //生成盐
-            $data['pwd'] = sha1($pwd . $salt . config('pwd_str'));
-            $data['salt'] = $salt;
-        }
-        if ($pwd2) {
-            $salt2 = rand(0, 99999); //生成盐
-            $data['pwd2'] = sha1($pwd2 . $salt2 . config('pwd_str'));
-            $data['salt2'] = $salt2;
-        }
-
-
-        unset($data['__token__']);
-        $res = self::where('id', $id)->update($data);
-        if ($res)
-            return ['code' => 0, 'info' => lang('czcg')];
-        else
-            return ['code' => 1, 'info' => lang('czsb')];
-    }
-
-    public function edit_users_status($id, $status)
+	public function edit_user_status($id, $status)
     {
         $status = intval($status);
         $id = intval($id);
@@ -444,7 +368,83 @@ class SdUser extends Model
             return ['code' => 1, 'info' => lang('czsb')];
     }
 
-    //生成邀请码
+	/**
+	 * 编辑用户
+	 *
+	 * @param int $id
+	 * @param string $tel
+	 * @param string $user_name
+	 * @param string $pwd
+	 * @param int $parent_id
+	 * @param $balance
+	 * @param $freeze_balance
+	 * @param string $token
+	 * @param string $pwd2
+	 * @param int $agent_id
+	 * @return array
+	 * @throws PDOException|Exception
+	 */
+	public function edit_user($id, $tel, $user_name, $remark, $pwd, $parent_id, $balance, $freeze_balance, $token, $pwd2 = '',$agent_id)
+	{
+		$tmp = self::where(['tel' => $tel])->where('id', '<>', $id)->count();
+		if ($tmp) {
+			return ['code' => 1, 'info' => lang('sjhmyzc')];
+		}
+		$data = [
+			'tel' => $tel,
+			'freeze_balance' => $freeze_balance,
+			'username' => $user_name,
+			'remark' => $remark,
+			'parent_id' => $parent_id,
+			'__token__' => $token,
+		];
+		//当前是代理修改，且允许代理修改用户余额
+		if($agent_id&&config("allow_agent_modify_balance")){
+			$data['balance'] = $balance;
+		}
+		//管理员允许修改用户余额
+		if(!$agent_id){
+			$data['balance'] = $balance;
+		}
+
+		if ($pwd) {
+			//不提交密码则不改密码
+			$data['pwd'] = $pwd;
+		} else {
+			$this->rule['pwd'] = '';
+		}
+		if ($parent_id) {
+			$parent_id = self::where('id', $parent_id)->value('id');
+			if (!$parent_id) {
+				return ['code' => 1, 'info' => lang('sjidbcz')];
+			}
+			$data['parent_id'] = $parent_id;
+		}
+
+		$validate = Validate::make($this,$this->rule, $this->info);//验证表单
+		if (!$validate->check($data)) return ['code' => 1, 'info' => $validate->getError()];
+
+		if ($pwd) {
+			$salt = rand(0, 99999); //生成盐
+			$data['pwd'] = sha1($pwd . $salt . config('pwd_str'));
+			$data['salt'] = $salt;
+		}
+		if ($pwd2) {
+			$salt2 = rand(0, 99999); //生成盐
+			$data['pwd2'] = sha1($pwd2 . $salt2 . config('pwd_str'));
+			$data['salt2'] = $salt2;
+		}
+
+
+		unset($data['__token__']);
+		$res = self::where('id', $id)->update($data);
+		if ($res)
+			return ['code' => 0, 'info' => lang('czcg')];
+		else
+			return ['code' => 1, 'info' => lang('czsb')];
+	}
+
+	//生成邀请码
     public static function create_invite_code()
     {
         $str = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';

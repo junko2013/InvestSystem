@@ -53,7 +53,11 @@
                 {
                     field: 'usertype', title: '{:lang("角色身份")}', minWidth: 100, align: 'center', templet: function (d) {
                         d.userinfo = d.userinfo || {};
-                        return d.userinfo.code ? (d.userinfo.name + ' ( ' + d.userinfo.code + ' ) ') : '-';
+                        d.invite_code = d.invite_code || '';
+                        if(d.invite_code){
+                            d.invite_code="/"+d.invite_code
+                        }
+                        return d.userinfo.code ? (d.userinfo.name + ' ( ' + d.userinfo.code + d.invite_code+' ) ') : '-';
                     }
                 },
                 /* {/notempty} */

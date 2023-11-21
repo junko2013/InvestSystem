@@ -6,6 +6,7 @@ use app\model\sd\SdInject as InjectDao;
 use app\model\sd\SdLevel as LevelDao;
 use app\model\sd\SdGroup as GroupDao;
 use app\model\sd\SdUser as UsersDao;
+use PDOStatement;
 use think\Db;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\DbException;
@@ -222,9 +223,9 @@ class SdOrder extends Model
         $other_data = [];
         //查出用户推荐人 发放推荐人佣金
         if ($uinfo['parent_id'] > 0) {
-            $pLevel = Db::name('xy_users')->where(['id' => $uinfo['parent_id']])->value('level');
+            $pLevel = SdUser::where(['id' => $uinfo['parent_id']])->value('level');
             if ($pLevel) {
-                $tj_bili = Db::name('xy_level')->where('level', $pLevel)->value('tj_bili');
+                $tj_bili = SdLevel::where('level', $pLevel)->value('tj_bili');
                 if ($tj_bili) {
                     if (isset($c_data)) $c_data['parent_commission'] = floatval($c_data['commission']) * floatval($tj_bili);
                     $other_data['parent_uid'] = $uinfo['parent_id'];
@@ -232,9 +233,9 @@ class SdOrder extends Model
             }
         }
         //事务处理
-        Db::startTrans();
+	    $this->startTrans();
         //将账户状态改为交易中
-        $res = Db::name('xy_users')->where('id', $uid)
+        $res = SdUser::where('id', $uid)
             ->update(['deal_status' => 3,
                 'deal_time' => strtotime(date('Y-m-d')),
                 'deal_count' => Db::raw('deal_count+1')
@@ -243,7 +244,7 @@ class SdOrder extends Model
         if ($groupRule['order_type'] == 1) {
             $oRes = [];
             foreach ($orderListData as $data) {
-                $oRes[] = Db::name($this->table)->insert(array_merge($data, $other_data));
+                $oRes[] = $this->insert(array_merge($data, $other_data));
             }
             //全部成功才行
             $res1 = true;
@@ -254,11 +255,10 @@ class SdOrder extends Model
                 }
             }
         } else {
-            $res1 = Db::name($this->table)->insert(array_merge($c_data, $other_data));
+            $res1 = $this->insert(array_merge($c_data, $other_data));
         }
         if ($inject) {
-            Db::name('xy_inject')
-                ->where('id', $inject['id'])
+            SdInject::where('id', $inject['id'])
                 ->update([
                     'in_time' => time(),
                     'in_amount' => $goods['num'],
@@ -266,10 +266,10 @@ class SdOrder extends Model
                 ]);
         }
         if ($res && $res1) {
-            Db::commit();
+            $this->commit();
             return ['code' => 0, 'info' => lang('qd_ok'), 'oid' => $ids, 'orderNum' => $orderNum];
         } else {
-            Db::rollback();
+			$this->rollback();
             return ['code' => 1, 'info' => lang('qd_sb')];
         }
     }
@@ -285,8 +285,7 @@ class SdOrder extends Model
      */
     public function get_user_order_setting($uid, $level_id)
     {
-        $setting = Db::name('xy_users_setting')
-            ->where('uid', $uid)
+        $setting = SdUserSetting::where('uid', $uid)
             ->where('date', null)
             ->find();
         if ($setting) {
@@ -297,7 +296,7 @@ class SdOrder extends Model
                 'min_deposit_order' => $setting['min_deposit_order'],
             ];
         }
-        $level = Db::name('xy_level')->where('level', $level_id)->find();
+        $level = SdLevel::where('level', $level_id)->find();
         return [
             'order_num' => $level['order_num'],
             'bili' => $level['bili'],
@@ -319,26 +318,24 @@ class SdOrder extends Model
     {
         if (!$group_id) {
             //普通组
-            $uinfo = Db::name('xy_users')->find($uid);
+            $uinfo = SdUser::find($uid);
             $uinfo['level'] = $uinfo['level'] > 0 ? $uinfo['level'] : 0;
-            $orderNum = Db::name('xy_convey')
-                ->where([
+            $orderNum = $this->where([
                     ['uid', '=', $uid],
                     ['level_id', '=', $uinfo['level']],
                     // ['addtime', 'between', strtotime(date('Y-m-d')) . ',' . time()],
                 ])
                 ->where('status', 'in', [0, 1, 3, 5])
                 ->count('id');
-            $all_order_num = Db::name('xy_level')->where('level', $uinfo['level'])->value('order_num');
+            $all_order_num = SdLevel::where('level', $uinfo['level'])->value('order_num');
             return [$orderNum, 0, $all_order_num];
         }
-        $groupInfo = Db::name('xy_group')->where('id', $group_id)->find();
+        $groupInfo = SdGroup::where('id', $group_id)->find();
         //总单数
         $all_order_num = intval($groupInfo['order_num']);
         //判断当前第几单
         $orderNum = 1;
-        $lastOrder = Db::name('xy_convey')
-            ->where('uid', $uid)
+        $lastOrder = $this->where('uid', $uid)
             ->where('group_is_active', 1)
             ->where('group_id', $group_id)
             ->order('oid desc')
@@ -374,7 +371,7 @@ class SdOrder extends Model
      * 获取打针比例
      * @param $uid int 用户编号
      * @param $order_num int 当前第几单
-     * @return array|null|\PDOStatement|string|Model
+     * @return array|null|PDOStatement|string|Model
      * @throws DataNotFoundException
      * @throws ModelNotFoundException
      * @throws DbException
@@ -383,8 +380,7 @@ class SdOrder extends Model
     {
         if ($order_num > 1) $order_num = $order_num + 1;
         //优先执行 指定单
-        $in = Db::name('xy_inject')
-            ->where('uid', $uid)
+        $in = SdInject::where('uid', $uid)
             ->where('order_num', $order_num)
 //            ->where('date', date('Y-m-d'))
             ->where('date', null)
@@ -392,8 +388,7 @@ class SdOrder extends Model
             ->find();
         if (!$in) {
             //下一单
-            $in = Db::name('xy_inject')
-                ->where('uid', $uid)
+            $in = SdInject::where('uid', $uid)
                 ->where('order_num', 0)
 //                ->where('date', date('Y-m-d'))
                 ->where('date', null)
@@ -424,7 +419,7 @@ class SdOrder extends Model
     private function rand_order($min, $max, $cid)
     {
         $num = mt_rand($min, $max);//随机交易额
-        $goods = Db::name('xy_goods_list')
+        $goods = Db::name('sd_goods')
             ->orderRaw('rand()')
             ->where('goods_price', 'between', [0, $num])
             ->where('cid', '=', $cid)
@@ -447,7 +442,7 @@ class SdOrder extends Model
      */
     public function do_order($oid, $status, $uid = '', $add_id = '')
     {
-        $info = Db::name('xy_convey')->find($oid);
+        $info = $this->find($oid);
         if (!$info) return ['code' => 1, 'info' => lang('order_sn_none')];
         if ($uid && $info['uid'] != $uid) return ['code' => 1, 'info' => lang('cscw')];
         if (!in_array($info['status'], [0, 5])) return ['code' => 1, 'info' => lang('ddycl')];
@@ -458,13 +453,13 @@ class SdOrder extends Model
             'pay_time' => time()
         ];
         $add_id ? $tmp['add_id'] = $add_id : '';
-        Db::startTrans();
-        $res = Db::name('xy_convey')->where('id', $oid)->update($tmp);
+		$this->startTrans();
+        $res = $this->where('id', $oid)->update($tmp);
         if (in_array($status, [1, 3])) {
             //TODO 判断余额是否足够
-            $user = Db::name('xy_users')->where('id', $info['uid'])->find();
+            $user = SdUser::where('id', $info['uid'])->find();
             if ($user['balance'] < $info['num']) {
-                Db::rollback();
+				$this->rollback();
                 return [
                     'code' => 1,
                     'info' => sprintf(lang('zhyebz'), ($info['num'] - $user['balance']) . ""),
@@ -476,8 +471,7 @@ class SdOrder extends Model
             $isMultipleOrder = false;
             if ($info['group_id'] > 0) {
                 $isGroup = true;
-                $o_g_ids = Db::name('xy_convey')
-                    ->where('uid', $info['uid'])
+                $o_g_ids = $this->where('uid', $info['uid'])
                     ->where('group_is_active', 1)
                     ->where('group_id', $info['group_id'])
                     ->where('group_rule_num', $info['group_rule_num'])
@@ -489,8 +483,7 @@ class SdOrder extends Model
             //付款
             if (!$info['is_pay']) {
                 try {
-                    $res1 = Db::name('xy_users')
-                        ->where('id', $info['uid'])
+                    $res1 = SdUser::where('id', $info['uid'])
                         ->dec('balance', $info['num'])
                         ->inc('freeze_balance', $info['num'] + $info['commission']) //冻结商品金额 + 佣金
                         ->update([
@@ -498,7 +491,7 @@ class SdOrder extends Model
                             'status' => 1
                         ]);
                     //商品支出
-                    $res2 = Db::name('xy_balance_log')->insert([
+                    $res2 = SdBalanceLog::insert([
                         'uid' => $info['uid'],
                         'sid' => $info['uid'],
                         'oid' => $oid,
@@ -508,7 +501,7 @@ class SdOrder extends Model
                         'addtime' => time()
                     ]);
                     //交易佣金
-                    $res8 = Db::name('xy_balance_log')->insert([
+                    $res8 = SdBalanceLog::insert([
                         'uid' => $info['uid'],
                         'sid' => $info['uid'],
                         'oid' => $oid,
@@ -518,7 +511,7 @@ class SdOrder extends Model
                         'addtime' => time()
                     ]);
                     //商品收入
-                    $res2 = Db::name('xy_balance_log')->insert([
+                    $res2 = SdBalanceLog::insert([
                         'uid' => $info['uid'],
                         'sid' => $info['uid'],
                         'oid' => $oid,
@@ -527,33 +520,29 @@ class SdOrder extends Model
                         'status' => 1,
                         'addtime' => time()
                     ]);
-                    if ($res && $res1 && $res2) {
-
-                    } else {
-                        Db::rollback();
+                    if (!($res && $res1 && $res2)) {
+						$this->rollback();
                         return ['code' => 1, 'info' => lang('czsb')];
                     }
                 } catch (Exception $th) {
-                    Db::rollback();
+					$this->rollback();
                     return ['code' => 1, 'info' => lang('czsb')];
                 }
             }
             //系统通知
             $isAllOk = true;
             if ($status == 3) {
-                Db::name('xy_message')->insert(['uid' => $info['uid'], 'type' => 2, 'title' => lang('sys_msg'), 'content' => $oid . ',' . lang('dd_pay_system'), 'addtime' => time()]);
+                SdMessage::insert(['uid' => $info['uid'], 'type' => 2, 'title' => lang('sys_msg'), 'content' => $oid . ',' . lang('dd_pay_system'), 'addtime' => time()]);
             }
-            //提交事物
-            Db::commit();
+	        $this->commit();
             if (!$isMultipleOrder) {
-                $c_status = Db::name('xy_convey')->where('id', $oid)->value('c_status');
+                $c_status = $this->where('id', $oid)->value('c_status');
                 //判断是否已返还佣金
                 if ($c_status === 0) $this->deal_reward($info['uid'], $oid, $info['num'], $info['commission']);
             } else {
                 //多单模式
                 //判断全部做完
-                $oList = Db::name('xy_convey')
-                    ->field('id,uid,num,commission,status,c_status')
+                $oList = $this->field('id,uid,num,commission,status,c_status')
                     ->where('id', 'in', $o_g_ids)
                     ->select();
                 foreach ($oList as $val) {
@@ -574,8 +563,7 @@ class SdOrder extends Model
             if ($isGroup && $isAllOk) {
                 list($orderNum, $groupRule) = $this->get_user_group_rule($user['id'], $user['group_id']);
                 if ($orderNum == 1) {
-                    Db::name('xy_convey')
-                        ->where('uid', $user['id'])
+                    $this->where('uid', $user['id'])
                         ->where('group_id', $user['group_id'])
                         ->update([
                             'group_is_active' => 0
@@ -585,17 +573,17 @@ class SdOrder extends Model
             return ['code' => 0, 'info' => lang('czcg')];
         } //
         elseif (in_array($status, [2, 4])) {
-            $res1 = Db::name('xy_users')->where('id', $info['uid'])
+            $res1 = SdUser::where('id', $info['uid'])
                 ->update([
                     'deal_status' => 1,
                 ]);
-            if ($status == 4) Db::name('xy_message')->insert(['uid' => $info['uid'], 'type' => 2, 'title' => lang('sys_msg'), 'content' => $oid . ',' . lang('dd_system_clean'), 'addtime' => time()]);
+            if ($status == 4) SdMessage::insert(['uid' => $info['uid'], 'type' => 2, 'title' => lang('sys_msg'), 'content' => $oid . ',' . lang('dd_system_clean'), 'addtime' => time()]);
             //系统通知
-            if ($res && $res1 !== false) {
-                Db::commit();
+            if ($res && $res1) {
+				$this->commit();
                 return ['code' => 0, 'info' => lang('czcg')];
             } else {
-                Db::rollback();
+				$this->rollback();
                 return ['code' => 1, 'info' => lang('czsb'), 'data' => $res1];
             }
         }
@@ -618,32 +606,29 @@ class SdOrder extends Model
      */
     public function deal_reward($uid, $oid, $num, $cnum)
     {
-        Db::name('xy_users')->where('id', $uid)->setInc('balance', $num + $cnum);
-        Db::name('xy_users')->where('id', $uid)->setDec('freeze_balance', $num + $cnum);
-        //Db::name('xy_balance_log')->where('oid', $oid)->update(['status' => 1]);
+        SdUser::where('id', $uid)->setInc('balance', $num + $cnum);
+        SdUser::where('id', $uid)->setDec('freeze_balance', $num + $cnum);
+        //SdBalanceLog::where('oid', $oid)->update(['status' => 1]);
         //将订单状态改为已返回佣金
-        Db::name('xy_convey')
-            ->where('id', $oid)
+        $this->where('id', $oid)
             ->update(['c_status' => 1, 'status' => 1]);
-        Db::name('xy_reward_log')
-            ->insert(['oid' => $oid, 'uid' => $uid, 'num' => $num, 'addtime' => time(), 'type' => 2, 'status' => 2]);
+        SdRewardLog::insert(['oid' => $oid, 'uid' => $uid, 'num' => $num, 'addtime' => time(), 'type' => 2, 'status' => 2]);
         //记录充值返佣订单
         /************* 发放交易奖励 *********/
         //之后下单人级别>0 才发放层级奖励
-        $level = Db::name('xy_users')->where('id', $uid)->value('level');
+        $level = SdUser::where('id', $uid)->value('level');
         if ($level > 0) {
-            $userList = model('admin/Users')->parent_user($uid, 3);
+            $userList = SdUser::parent_user($uid, 3);
         } else $userList = [];
 
         //发放佣金
         if ($userList) {
             foreach ($userList as $v) {
                 if ($v['level'] == 0) continue;
-                $tj_bili = Db::name('xy_level')->where('level', $v['level'])->value('tj_bili');
+                $tj_bili = SdLevel::where('level', $v['level'])->value('tj_bili');
                 $price = $this->get_tj_bili($tj_bili, intval($v['lv'])) * $cnum;
                 if ($v['status'] === 1) {
-                    Db::name('xy_reward_log')
-                        ->insert([
+                    SdRewardLog::insert([
                             'uid' => $v['id'],
                             'sid' => $v['pid'],
                             'oid' => $oid,

@@ -1,14 +1,24 @@
 <?php
 
+// +----------------------------------------------------------------------
+// | Admin Plugin for ThinkAdmin
+// +----------------------------------------------------------------------
+// | 版权所有 2014~2023 ThinkAdmin [ thinkadmin.top ]
+// +----------------------------------------------------------------------
+// | 官方网站: https://thinkadmin.top
+// +----------------------------------------------------------------------
+// | 开源协议 ( https://mit-license.org )
+// | 免责声明 ( https://thinkadmin.top/disclaimer )
+// +----------------------------------------------------------------------
+// | gitee 代码仓库：https://gitee.com/zoujingli/think-plugs-admin
+// | github 代码仓库：https://github.com/zoujingli/think-plugs-admin
+// +----------------------------------------------------------------------
+
 namespace app\admin\controller;
 
 use think\admin\Controller;
 use think\admin\helper\QueryHelper;
 use think\admin\model\SystemBase;
-use think\App;
-use think\db\exception\DataNotFoundException;
-use think\db\exception\DbException;
-use think\db\exception\ModelNotFoundException;
 
 /**
  * 数据字典管理
@@ -17,22 +27,13 @@ use think\db\exception\ModelNotFoundException;
  */
 class Base extends Controller
 {
-	public function __construct(App $app)
-	{
-		parent::__construct($app);
-		$ip = $this->request->ip();
-		$ip2region = new \Ip2Region();
-		$result = $ip2region->simple($ip);
-//		var_dump($result);
-	}
-
-	/**
+    /**
      * 数据字典管理
      * @auth true
      * @menu true
-     * @throws DataNotFoundException
-     * @throws DbException
-     * @throws ModelNotFoundException
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
      */
     public function index()
     {
@@ -67,7 +68,7 @@ class Base extends Controller
     /**
      * 表单数据处理
      * @param array $data
-     * @throws DbException
+     * @throws \think\db\exception\DbException
      */
     protected function _form_filter(array &$data)
     {

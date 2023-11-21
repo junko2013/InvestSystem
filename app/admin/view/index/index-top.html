@@ -18,16 +18,6 @@
     </ul>
     <ul class="layui-nav layui-layout-right">
         <li lay-unselect class="layui-nav-item"><a data-reload><i class="layui-icon layui-icon-refresh-3"></i></a></li>
-        <li class="layui-nav-item">
-            <dl class="layui-nav-child">
-                {foreach $langs as $l}
-                <dd lay-unselect><a href="{:sysuri('admin/index/switchLang',['lang'=>$l])}"><i class="layui-icon layui-icon-set-fill"></i> {:$l}</a></dd>
-                {/foreach}
-            </dl>
-            <a class="layui-elip">
-                <span>{:lang('语言切换')}</span>
-            </a>
-        </li>
         {if session('user.username')}
         <li class="layui-nav-item">
             <dl class="layui-nav-child">
