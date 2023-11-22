@@ -2,7 +2,7 @@
 
 namespace app\model\sd;
 
-use think\Model;
+use think\admin\Model;
 
 /**
  * 支付方式

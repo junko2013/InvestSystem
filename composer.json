@@ -4,7 +4,6 @@
   "require": {
     "php": ">=8.2.0",
     "ext-json": "*",
-    "aws/aws-sdk-php": "^3.286",
     "zoujingli/ip2region": "^2.0",
     "zoujingli/think-library": "^6.1",
     "zoujingli/think-plugs-admin": "^1.0",

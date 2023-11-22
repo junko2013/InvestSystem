@@ -13,7 +13,7 @@ use think\db\exception\DbException;
 use think\db\exception\ModelNotFoundException;
 use think\db\exception\PDOException;
 use think\Exception;
-use think\Model;
+use think\admin\Model;
 
 class SdOrder extends Model
 {

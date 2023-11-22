@@ -38,5 +38,5 @@ return [
     ],
 
 	//是否开启谷歌令牌
-	'open_google_safe' => false,
+	'open_google_safe' => true,
 ];

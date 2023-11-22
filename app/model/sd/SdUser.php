@@ -10,7 +10,7 @@ use think\db\exception\DbException;
 use think\db\exception\ModelNotFoundException;
 use think\db\exception\PDOException;
 use think\facade\Validate;
-use think\Model;
+use think\admin\Model;
 
 class SdUser extends Model
 {

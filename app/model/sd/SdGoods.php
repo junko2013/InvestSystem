@@ -2,8 +2,7 @@
 
 namespace app\model\sd;
 
-use think\Db;
-use think\Model;
+use think\admin\Model;
 
 /**
  * 商品

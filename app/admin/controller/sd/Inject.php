@@ -74,7 +74,6 @@ class Inject extends BaseSdCtrl
 	/**
 	 * 删除打针
 	 * @auth true
-	 * @throws DbException
 	 */
 	public function remove(): void
 	{
